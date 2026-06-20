@@ -1,0 +1,11 @@
+venv/
+data/
+__pycache__/
+.DS_Store
+*.csv
+.ipynb_checkpoints/
+*.bin
+*.model
+glove*
+.vscode/
+
