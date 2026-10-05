@@ -1,62 +1,50 @@
 import string
-import numpy as np
-from sklearn.feature_extraction.text import TfidfVectorizer
-from gensim.models import Word2Vec
+import nltk
+from nltk.corpus import stopwords
 
-def clean_text(text):
+class TextPreprocessor:
     """
-    Cleans a single comment by lowercasing and removing punctuation.
-    @param text: raw comment string
-    @return: cleaned lowercase string with punctuation removed
+    Preprocess text comments for the Toxic Comment Classification model.
+
+    The preprocessor:
+    - converts text to lowercase
+    - tokenises text
+    - removes English stop words
+    - removes punctuation
+    - removes empty tokens
     """
-    #toxic_words = toxic_text.lower().split()
-    #toxic_words_clean = [word.translate(str.maketrans('', '', string.punctuation)) for word in toxic_words if word not in stop_words and word != '']
-    #toxic_words_clean = [word for word in toxic_words_clean if word != '']
+    def __init__(self) -> None:
+        """Init method."""
 
-    return text.lower().translate(str.maketrans('', '', string.punctuation))
+        # Download the NLTK english word-stop dataset.
+        nltk.download("stopwords", quiet=True)
 
-   
+        #Store stop words for usage duroing text cleanning
+        self.stop_words = set(stopwords.words("english"))
 
-def get_features(text_train, text_test,  method='tfidf'):
-    """
-    TO_DO
-    """
+        #Create transaltion table that removes puntuation.
+        self.punctuation_table = str.maketrans("","",string.punctuation,) 
 
-    #text → TfidfVectorizer → sparse matrix of 
-    if method == 'tfidf':
-        vectorizer = TfidfVectorizer(max_features=10000)
-        X_train = vectorizer.fit_transform(text_train)
-        X_test = vectorizer.transform(text_test)
-        return X_train, X_test
+    def clean(self, text: str) -> str:
+        """
+        Clean a single comment.
 
+        Args:
+            text: Raw comment text.
 
-    #text → train Word2Vec → average word vectors → array of numbers
-    if method == 'word2vec':
-        sentences = [comment.lower().split() for comment in text_train]
-        w2v_model = Word2Vec(sentences, vector_size=100, window=5, min_count=1, workers=4)
-        X_train = np.array([_get_comment_vector(c, w2v_model, 100) for c in text_train])
-        X_test = np.array([_get_comment_vector(c, w2v_model, 100) for c in text_test])
-        return X_train, X_test
-    raise ValueError(f"Unknown feature method: {method}")
+        Returns:
+            Cleaned lowercase text with stop words
+            and punctuation removed.
+        """
 
-def _gte_commnet_vector(comment, w2w_model, vector_size):
-    """
-    Converts a single commnet into averaged Word2Vec vector
-    @param comment: Raw text for a single comment
-    @return: a 100 vector if no words were recognized
-    """
-    
-    # split comment into words
-    words = comment.lower().split()
-          
-    # get vector for each word
-    vectors = [ w2v_model.wv[word] for word in words if word in w2v_model.wv]
-       
-    # average all vectors
-    if len (vectors) == 0:
-        return np.zeros(vector_size)
+        # Convert the text to lowercase and split it into words.
+        words = text.lower().split()
         
-    # return the average vector
-    return np.mean (vectors, axis=0)
-
-
+        # Remove stop words and punctuation from each word.
+        cleaned_words = [word.translate(self.punctuation_table)
+                         for word in words
+                         if word not in self.stop_words
+        ]
+        
+        # Remove empty words and join the words back into a string.
+        return " ".join (word for word in cleaned_words if word)
